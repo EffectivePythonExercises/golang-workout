@@ -17,6 +17,11 @@ const (
 var FIXED_STRINGS = [...]string{"Hello", "Goody", "Buddy"}
 
 func main() {
+	FixedLenInterpolationBenchmarks()
+	VariableLenInterpolationBenchmarks()
+}
+
+func FixedLenInterpolationBenchmarks() {
 	fmt.Println("================================ FIXED LENGTH ================================")
 
 	Tsukuyomi(FixedLengthAddOps)
@@ -28,6 +33,18 @@ func main() {
 	Tsukuyomi(FixedLengthSprintf)
 
 	Tsukuyomi(FixedLengthJoin)
+}
+
+func VariableLenInterpolationBenchmarks() {
+	fmt.Println("================================ VARIABLE LENGTH ================================")
+
+	MugenTsukuyomi(VariableLengthAddOps)
+
+	MugenTsukuyomi(VariableLengthUseBuffer)
+
+	MugenTsukuyomi(VariableLengthSprintf)
+
+	MugenTsukuyomi(VariableLengthJoin)
 
 }
 
@@ -51,6 +68,28 @@ func Tsukuyomi(fn func(*string)) {
 	fmt.Printf("    * Function %-55s took %v\n\n", funcname, elapsed)
 }
 
+func MugenTsukuyomi(fn func(...string) string) {
+	start := time.Now()
+
+	flec := reflect.ValueOf(fn).Pointer()
+	pc := runtime.FuncForPC(flec)
+	funcname := pc.Name()
+
+	fmt.Printf("==== %s ====\n", funcname)
+
+	arguments := []string{"a", "b", "AAAA", "dgs", "'$$ssdfs22'", "'9jsdfjsdf'", "'(TEST)'", "'^^^^^'"}
+	var result string
+
+	for i := 0; i < REPETITION; i++ {
+		result = fn(arguments...)
+	}
+
+	elapsed := time.Since(start)
+
+	fmt.Println("    * Result:", result)
+	fmt.Printf("    * Function %-55s took %v\n\n", funcname, elapsed)
+}
+
 func FixedLengthAddOps(result *string) {
 	var s1, s2, s3 string
 	s1 = FIXED_STRINGS[0]
@@ -60,6 +99,22 @@ func FixedLengthAddOps(result *string) {
 	concatenated := s1 + DELIM + s2 + DELIM + s3
 
 	*result = concatenated
+}
+
+func VariableLengthAddOps(ss ...string) string {
+	if len(ss) == 0 {
+		return ""
+	}
+
+	concatenated := ""
+
+	for i, s := range ss {
+		concatenated += s
+		if i != len(ss)-1 {
+			concatenated += DELIM
+		}
+	}
+	return concatenated
 }
 
 func FixedLengthInPlaceAddOps(result *string) {
@@ -97,6 +152,23 @@ func FixedLengthUseBuffer(result *string) {
 	*result = concatenated
 }
 
+func VariableLengthUseBuffer(ss ...string) string {
+	if len(ss) == 0 {
+		return ""
+	}
+
+	var buffer bytes.Buffer
+
+	for i, s := range ss {
+		buffer.WriteString(s)
+		if i != len(ss)-1 {
+			buffer.WriteString(DELIM)
+		}
+	}
+	concatenated := buffer.String()
+	return concatenated
+}
+
 func FixedLengthSprintf(result *string) {
 	var s1, s2, s3 string
 	s1 = FIXED_STRINGS[0]
@@ -108,8 +180,39 @@ func FixedLengthSprintf(result *string) {
 	*result = concatenated
 }
 
+func VariableLengthSprintf(ss ...string) string {
+	if len(ss) == 0 {
+		return ""
+	}
+
+	var items = make([]any, len(ss)*2-1)
+
+	k := 0
+	for i := 0; i < len(items); i++ {
+		if i%2 == 0 {
+			items[i] = ss[k]
+			k += 1
+		} else {
+			items[i] = DELIM
+		}
+
+	}
+	foramtString := strings.Repeat("%s", len(items))
+	concatenated := fmt.Sprintf(foramtString, items...)
+	return concatenated
+}
+
 func FixedLengthJoin(result *string) {
 	concatenated := strings.Join(FIXED_STRINGS[:], DELIM)
 
 	*result = concatenated
+}
+
+func VariableLengthJoin(ss ...string) string {
+	if len(ss) == 0 {
+		return ""
+	}
+
+	concatenated := strings.Join(ss, DELIM)
+	return concatenated
 }
