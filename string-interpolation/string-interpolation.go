@@ -30,6 +30,8 @@ func FixedLenInterpolationBenchmarks() {
 
 	Tsukuyomi(FixedLengthUseBuffer)
 
+	Tsukuyomi(FixedLengthStringBuilder)
+
 	Tsukuyomi(FixedLengthSprintf)
 
 	Tsukuyomi(FixedLengthJoin)
@@ -41,6 +43,8 @@ func VariableLenInterpolationBenchmarks() {
 	MugenTsukuyomi(VariableLengthAddOps)
 
 	MugenTsukuyomi(VariableLengthUseBuffer)
+
+	MugenTsukuyomi(VariableLengthStringBuilder)
 
 	MugenTsukuyomi(VariableLengthSprintf)
 
@@ -169,6 +173,48 @@ func VariableLengthUseBuffer(ss ...string) string {
 	return concatenated
 }
 
+func FixedLengthStringBuilder(result *string) {
+	var s1, s2, s3 string
+	s1 = FIXED_STRINGS[0]
+	s2 = FIXED_STRINGS[1]
+	s3 = FIXED_STRINGS[2]
+
+	totalLen := GetTotalLen(len(DELIM), s1, s2, s3)
+
+	var b strings.Builder
+
+	b.Grow(totalLen)
+
+	b.WriteString(s1)
+	b.WriteString(DELIM)
+	b.WriteString(s2)
+	b.WriteString(DELIM)
+	b.WriteString(s3)
+
+	*result = b.String()
+}
+
+func VariableLengthStringBuilder(ss ...string) string {
+	if len(ss) == 0 {
+		return ""
+	}
+
+	totalLen := GetTotalLen(len(DELIM), ss...)
+
+	var b strings.Builder
+
+	b.Grow(totalLen)
+
+	for i, s := range ss {
+		b.WriteString(s)
+		if i != len(ss)-1 {
+			b.WriteString(DELIM)
+		}
+	}
+	concatenated := b.String()
+	return concatenated
+}
+
 func FixedLengthSprintf(result *string) {
 	var s1, s2, s3 string
 	s1 = FIXED_STRINGS[0]
@@ -215,4 +261,15 @@ func VariableLengthJoin(ss ...string) string {
 
 	concatenated := strings.Join(ss, DELIM)
 	return concatenated
+}
+
+func GetTotalLen(delimiterLength int, items ...string) int {
+	var t int
+	for i, s := range items {
+		t += len(s)
+		if i != len(items)-1 {
+			t += delimiterLength
+		}
+	}
+	return t
 }
