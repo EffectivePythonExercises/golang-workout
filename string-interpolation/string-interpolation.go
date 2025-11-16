@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	DELIM      = "_" // delimiter
-	REPETITION = 1_000_000
+	DELIM      string = "_" // delimiter
+	REPETITION uint   = 1_000_000
 )
 
 var FIXED_STRINGS = [...]string{"Hello", "Goody", "Buddy"}
@@ -58,7 +58,7 @@ func Tsukuyomi(fn func(*string)) {
 	fmt.Printf("==== %s ====\n", funcname)
 
 	var result string
-	for i := 0; i < REPETITION; i++ {
+	for range REPETITION {
 		fn(&result)
 	}
 
@@ -80,7 +80,7 @@ func MugenTsukuyomi(fn func(...string) string) {
 	arguments := []string{"a", "b", "AAAA", "dgs", "'$$ssdfs22'", "'9jsdfjsdf'", "'(TEST)'", "'^^^^^'"}
 	var result string
 
-	for i := 0; i < REPETITION; i++ {
+	for range REPETITION {
 		result = fn(arguments...)
 	}
 
